@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<script id="vertex-shader-twist" type="x-shader/x-vertex">
+
+    attribute  vec4 vPosition;
+    attribute  vec4 vColor;
+    uniform mat4 modelMatrix;
+    uniform mat4 projMatrix;
+    uniform mat4 cameraMatrix;
+
+    varying vec4 fColor;
+
+    uniform float theta;
+
+    void main()
+    {
+        /* FIX ME */
+        fColor = vColor;
+        vec4 worldPos = modelMatrix * vPosition;
+        
+        mat4 rotMat;
+        float theta2 = sin(theta) * worldPos.y;
+        rotMat[0] = vec4(cos(theta2), 0, -sin(theta2), 0);
+        rotMat[1] = vec4(0, 1, 0, 0);
+        rotMat[2] = vec4(sin(theta2), 0, cos(theta2), 0);
+        rotMat[3] = vec4(0, 0, 0, 1);
+
+        worldPos = rotMat * worldPos;
+        
+        gl_Position = projMatrix * cameraMatrix * worldPos;
+        
+    }
+</script>
+
+<script id="vertex-shader-peak" type="x-shader/x-vertex">
+
+    attribute vec4 vPosition;
+    attribute vec4 vColor;
+    uniform mat4 modelMatrix;
+    uniform mat4 projMatrix;
+    uniform mat4 cameraMatrix;
+
+    varying vec4 fColor;
+
+    uniform float theta;
+
+    void main()
+    {
+        /* FIX ME */
+        fColor = vColor;
+        vec4 worldPos = modelMatrix * vPosition;
+        float peak = (4.0 - worldPos.y)/ 4.0;
+        worldPos = worldPos * vec4(peak, 1.0, peak, 1.0);
+        gl_Position = projMatrix * cameraMatrix * worldPos;
+    }
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+varying vec4 fColor;
+
+void main()
+{
+    gl_FragColor = fColor;
+}
+</script>
+
+<script type="text/javascript" src="lib/webgl-utils.js"></script>
+<script type="text/javascript" src="lib/initShaders.js"></script>
+<script type="text/javascript" src="lib/MV.js"></script>
+<script type="text/javascript" src="example.js"></script>
+
+
+<body onload="init('vertex-shader-twist')">
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+<br />
+<button type="button" onclick="init('vertex-shader-twist')">Twist</button>
+<button type="button" onclick="init('vertex-shader-peak')">Peak</button>
+</body>
+</html>
