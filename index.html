@@ -18,9 +18,9 @@
         void main()
         {
             fColor = vColor;
-            vec4 worldPos = modelMatrix * vPosition;
-        
-            gl_Position = projMatrix * cameraMatrix * worldPos;
+//vec4 worldPos = modelMatrix * vPosition;
+
+            gl_Position = projMatrix * cameraMatrix *modelMatrix* vPosition;
         
         }
 

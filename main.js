@@ -1,5 +1,5 @@
 /*
-    CS 4732 - Project 1 
+    CS 4732 - Project 1
     @author Ethan Chen
 */
 
@@ -19,7 +19,7 @@ function activatebspline(){
 let pointsArray = [];
 let colorsArray = [];
 
-let vertices = [    
+let vertices = [
     vec4( -0.5, -0.5,  0.5, 0.5 ),
     vec4( -0.5,  0.5,  0.5, 0.5 ),
     vec4( 0.5,  0.5,  0.5, 0.5 ),
@@ -168,9 +168,9 @@ function findCatmullRomPoint(points, a) {
 	let by = vec4(p0[1], p1[1], p2[1], p3[1])
 	let bz = vec4(p0[2], p1[2], p2[2], p3[2])
 
-			
+
 	return [dot(u,mult(m,bx)), dot(u,mult(m,by)), dot(u,mult(m,bz)), 1];
-	
+
 }
 
 
@@ -189,7 +189,7 @@ function findBSplinePoint(points, a) {
 		vec4(-3, 0, 3, 0),
 		vec4(1, 4, 1, 0)
 	)
-	
+
 	let p0 = points[(i+points.length-1)%points.length]
 	let p1 = points[(i+points.length)%points.length]
 	let p2 = points[(i+points.length+1)%points.length]
@@ -197,7 +197,7 @@ function findBSplinePoint(points, a) {
 	let bx = vec4(p0[0], p1[0], p2[0], p3[0])
 	let by = vec4(p0[1], p1[1], p2[1], p3[1])
 	let bz = vec4(p0[2], p1[2], p2[2], p3[2])
-		
+
 	return [dot(u,mult(m,bx)) * 1/6, dot(u,mult(m,by)) * 1/6,  dot(u,mult(m,bz)) * 1/6, 1];
 }
 
@@ -260,7 +260,7 @@ function quatToMatrix(q) {
 
 
 function magnitude(v){
-    
+
     return Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])
 }
 
@@ -303,6 +303,145 @@ function main()
     let uCamera = gl.getUniformLocation(program, "cameraMatrix");
 
 
+    // ---- BUILD FISH OUTSIDE render() ----
+    let fishBody = new Model(gl);
+    let fishTail = new Model(gl);
+    let fishTopFin = new Model(gl);
+    let fishBottomFin = new Model(gl);
+    let fishHead = new Model(gl);
+    let fishingRod = new Model(gl);
+// Head - small cube in front
+    singleColorCube(5); // Magenta color (or pick another)
+    multCube(mult(translate(1.2, 0.0, 0.0), scalem(0.3, 0.3, 0.2)));
+    fishHead.setData(gl, pointsArray, colorsArray);
+
+// Parent it to body
+    fishHead.setParent(fishBody);
+
+// Transform relative to body
+    fishHead.transform = translate(1.2, 0.0, 0.0);
+
+// Body - main oval
+    singleColorCube(2); // Yellow color
+    multCube(scalem(2.0, 1.0, 1.0)); // Stretch in X direction
+    fishBody.setData(gl, pointsArray, colorsArray);
+
+// Tail - vertical fin
+    singleColorCube(4); // Blue color
+    multCube(mult(translate(-1.2, 0.0, 0.0), scalem(0.5, 1.0, 0.5)));
+    fishTail.setData(gl, pointsArray, colorsArray);
+// --- Manually build Top Fin ---
+    pointsArray = [];
+    colorsArray = [];
+
+    let topFinVertices = [
+        vec4(0.0, 0.0, 0.0, 1.0),        // base center
+        vec4(-0.25, 0.0, 0.0, 1.0),      // base left
+        vec4(0.25, 0.0, 0.0, 1.0),       // base right
+        vec4(0.0, 0.5, 0.0, 1.0)         // top point
+    ];
+
+// two triangles
+    pointsArray.push(topFinVertices[1]); colorsArray.push(vertexColors[6]); // white
+    pointsArray.push(topFinVertices[0]); colorsArray.push(vertexColors[6]);
+    pointsArray.push(topFinVertices[3]); colorsArray.push(vertexColors[6]);
+
+    pointsArray.push(topFinVertices[0]); colorsArray.push(vertexColors[6]);
+    pointsArray.push(topFinVertices[2]); colorsArray.push(vertexColors[6]);
+    pointsArray.push(topFinVertices[3]); colorsArray.push(vertexColors[6]);
+    let scaleMatrix = scalem(3.0, 3.5, 3.0); // scaling matrix
+
+    for (let i = 0; i < pointsArray.length; i++) {
+        pointsArray[i] = mult(scaleMatrix, pointsArray[i]);
+    }
+    fishTopFin.setData(gl, pointsArray, colorsArray);
+    fishTopFin.transform = translate(0.0, 0.8, 0.0);
+
+// --- Manually build Bottom Fin ---
+    pointsArray = [];
+    colorsArray = [];
+
+    let bottomFinVertices = [
+        vec4(0.0, 0.0, 0.0, 1.0),
+        vec4(-0.25, 0.0, 0.0, 1.0),
+        vec4(0.25, 0.0, 0.0, 1.0),
+        vec4(0.0, -0.5, 0.0, 1.0)        // notice negative height
+    ];
+
+    pointsArray.push(bottomFinVertices[1]); colorsArray.push(vertexColors[6]);
+    pointsArray.push(bottomFinVertices[0]); colorsArray.push(vertexColors[6]);
+    pointsArray.push(bottomFinVertices[3]); colorsArray.push(vertexColors[6]);
+
+    pointsArray.push(bottomFinVertices[0]); colorsArray.push(vertexColors[6]);
+    pointsArray.push(bottomFinVertices[2]); colorsArray.push(vertexColors[6]);
+    pointsArray.push(bottomFinVertices[3]); colorsArray.push(vertexColors[6]);
+    scaleMatrix = scalem(3.0, 3.5, 3.0); // scaling matrix
+
+    for (let i = 0; i < pointsArray.length; i++) {
+        pointsArray[i] = mult(scaleMatrix, pointsArray[i]);
+    }
+    fishBottomFin.setData(gl, pointsArray, colorsArray);
+    fishBottomFin.transform = translate(0.0, -1, 0.0);
+
+// Set parent relationships
+    fishTail.setParent(fishBody);
+    fishTopFin.setParent(fishBody);
+    fishBottomFin.setParent(fishBody);
+
+// Set local transforms
+    fishBody.transform = mat4(); // Identity
+    fishTail.transform = translate(-1.2, 0.0, 0.0);
+
+
+
+     let fishingRodSegments = []; // array to hold all rod pieces
+    let numSegments = 5; // how many cubes for the rod
+
+    for (let i = 0; i < numSegments; i++) {
+        let segment = new Model(gl);
+
+        colorCube(); // create cube
+        multCube(scalem(0.05, 1, 0.05)); // make it thin and tall
+        segment.setData(gl, pointsArray, colorsArray);
+
+        if (i == 0) {
+            segment.setParent(null); // base of the rod, no parent
+            segment.transform = translate(3.0, 0.0, 0.0); // place off to the right
+        } else {
+            segment.setParent(fishingRodSegments[i-1]); // chain to previous
+            segment.transform = translate(0.0, .6, 0.0); // move upward
+        }
+        fishingRodSegments.push(segment);
+    }
+
+
+
+
+// ---- BUILD ARM ----
+    let upperArm = new Model(gl);
+    let forearm = new Model(gl);
+    let hand = new Model(gl);
+
+// Create Upper Arm (flat and long)
+    colorCube();
+    multCube(scalem(0.3, 1.0, 0.3)); // skinny rectangle
+    upperArm.setData(gl, pointsArray, colorsArray);
+    upperArm.transform = translate(-3.0, 3.0, 0.0); // somewhere left of fish
+
+// Create Forearm (attach to upper arm, rotated 90 degrees)
+    colorCube();
+    multCube(scalem(0.3, 1.0, 0.3));
+    forearm.setData(gl, pointsArray, colorsArray);
+    forearm.setParent(upperArm);
+    forearm.transform = mult(translate(1.0, -1.0, 0.0), rotateZ(-90));
+
+// Create Hand (small block at end of forearm)
+    colorCube();
+    multCube(scalem(0.2, 0.2, 0.2));
+    hand.setData(gl, pointsArray, colorsArray);
+    hand.setParent(forearm);
+    hand.transform = translate(.0, 1.0, 0.0); // straight down from forearm tip
+
     // Define function for drawing a model
     function drawModel(model, primitive) {
         gl.bindBuffer(gl.ARRAY_BUFFER, model.posBuffer);
@@ -338,7 +477,7 @@ function main()
         // Parse file as spline for gl buffers and viewports
         let raw_lines = reader.result.split("\n");
         let lines = [];
-        
+
         for (let i = 0; i < raw_lines.length; i++){
             let line = raw_lines[i].trim();
             if (line.length == 0 || line[0] == "#")
@@ -369,7 +508,7 @@ function main()
             }
             splines.push(new Spline(timeCount, posPoints, rotPoints));
         }
-        
+
         // Setup scene
         activeSpline = splines[0];
         splineModels = []
@@ -430,6 +569,9 @@ function main()
     let lastTime = 0
     let lookAtTransform = mat4()
     function render(currTime){
+        let modelMatrixLoc = gl.getUniformLocation(program,'modelMatrix')
+        modelMatrix = rotateX(180)
+        gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix))
         if (reset){ // Reset animation timeline state
             reset = false
             lastTime = currTime
@@ -444,67 +586,54 @@ function main()
         gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        // Draw root
-        drawModel(modelRoot, gl.TRIANGLES);
 
-        // Draw legs
-        for(let i = 0; i < 3; i++){
-            drawModel(modelLegs[0][i], gl.TRIANGLES);
-            drawModel(modelLegs[1][i], gl.TRIANGLES);
+
+        fishBody.transform = rotateX(180);
+        drawModel(fishHead,gl.TRIANGLES);
+        drawModel(fishBody, gl.TRIANGLES);
+        drawModel(fishTail, gl.TRIANGLES);
+        drawModel(fishTopFin, gl.TRIANGLES);
+        drawModel(fishBottomFin, gl.TRIANGLES);
+        for (let segment of fishingRodSegments) {
+            drawModel(segment, gl.TRIANGLES);
         }
 
-        // Break if no spline is active
-        if (activeSpline == null){
-            requestAnimationFrame(render);
-            return;
-        }
-
-        // Advance time
-        let delta = (currTime - lastTime)/1000
-        let splinePos = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+delta)/activeSpline.time)
-        let splinePos2 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime)/activeSpline.time)
-        let splineRot = findQuatRotPoint(activeSpline.rotPoints,(elapsedTime)/activeSpline.time)
 
 
-        // Accumulate distance travelled
-        distTravelled += magnitude(subtract(splinePos2, splinePos))
-
-        
-        
-		// Loop animation
-        elapsedTime += delta
-        if (elapsedTime > activeSpline.time){
-			elapsedTime = 0
-		}
-        
-        // Animate root
-        let timeTheta = distTravelled*4
-        
-        
-        if (!equal(cross(vec3(splinePos2),vec3(splinePos)), vec3())){ // Handle edge case when cross vector becomes zero
-            lookAtTransform = inverse(lookAt(vec3(splinePos2), vec3(splinePos), vec3(0, 1, 0)))
-        }
-        modelRoot.transform = mult(quatToMatrix(splineRot), translate(0,5,0))
-        modelRoot.transform = mult(lookAtTransform, modelRoot.transform)
-        // Animate legs
-        for (let legIndex = 0; legIndex < modelLegs.length; legIndex++){
-            let legArr = modelLegs[legIndex]
-            let hOffset = legIndex == 0 ? 0.5 : -0.5
-            let timeOffset = legIndex == 0 ? 0 : Math.PI
-            let rotRad = timeTheta + timeOffset
-            legArr[0].transform = mult(translate(hOffset,-1,0), rotateX(Math.cos(rotRad)*45))
-            legArr[1].transform = mult(translate(0,-2,0), rotateX(Math.sin(rotRad)*45-45))
-            legArr[2].transform = mult(translate(0,-2,0), rotateX(-Math.cos(rotRad)*45))
-        }
-        
-        for(let i = 0; i < splineModels.length; i++){
-            drawModel(splineModels[i], gl.LINES);
-        }
-		
+        drawModel(upperArm, gl.TRIANGLES);
+        drawModel(forearm, gl.TRIANGLES);
+        drawModel(hand, gl.TRIANGLES);
         lastTime = currTime
         requestAnimationFrame(render);
     }
     requestAnimationFrame(render);
 
 
+}
+function createFin(color) {
+    pointsArray.length = 0;
+    colorsArray.length = 0;
+
+    // Define a thin triangle (flat, in XY plane)
+    let baseSize = 0.5;
+    let height = 0.5;
+
+    let v0 = vec4(0.0, 0.0, 0.0, 1.0);        // base center
+    let v1 = vec4(-baseSize/2, 0.0, 0.0, 1.0); // base left
+    let v2 = vec4(baseSize/2, 0.0, 0.0, 1.0);  // base right
+    let v3 = vec4(0.0, height, 0.0, 1.0);      // top point
+
+    // Two triangles: (v1, v0, v3) and (v0, v2, v3)
+    pointsArray.push(v1); colorsArray.push(vertexColors[color]);
+    pointsArray.push(v0); colorsArray.push(vertexColors[color]);
+    pointsArray.push(v3); colorsArray.push(vertexColors[color]);
+
+    pointsArray.push(v0); colorsArray.push(vertexColors[color]);
+    pointsArray.push(v2); colorsArray.push(vertexColors[color]);
+    pointsArray.push(v3); colorsArray.push(vertexColors[color]);
+}
+function multFin(m){
+    for (let i = 0; i < pointsArray.length; i++){
+        pointsArray[i] = mult(m, pointsArray[i]);
+    }
 }
