@@ -467,61 +467,24 @@ function main()
         reader.addEventListener("load", onFileLoad);
     });
 
-    let reset = true
-    let splines = [];
-    let activeSpline = null;
-    let splineModels = []
-    function onFileLoad(e){
-        // Initialize animation time state
-        reset = true
-        // Parse file as spline for gl buffers and viewports
-        let raw_lines = reader.result.split("\n");
-        let lines = [];
 
-        for (let i = 0; i < raw_lines.length; i++){
-            let line = raw_lines[i].trim();
-            if (line.length == 0 || line[0] == "#")
-                continue;
-            lines.push(line);
-        }
-        // Get spline count
-        let splineCount = parseInt(lines.shift())
-        for (let spline_i = 0; spline_i < splineCount; spline_i++){
-            // Get point count / time info
-            let pointCount = parseInt(lines.shift());
-            let timeCount = Number(lines.shift());
-            let posPoints = [];
-            let rotPoints = [];
-            // Get point data
-            for (let i = 0; i < pointCount*2; i++){
-                let raw_dat = lines[i]
-                let nums = raw_dat.replaceAll(' ', '').split(",")
-                for (let j = 0; j < nums.length; j++){
-                    nums[j] = Number(nums[j]);
-                }
-                if (i%2 ==0){
-                    nums.push(1.0)
-                    posPoints.push(nums);
-                }else{
-                    rotPoints.push(eulerToQuat(nums[0],nums[1],nums[2]));
-                }
-            }
-            splines.push(new Spline(timeCount, posPoints, rotPoints));
-        }
-
-        // Setup scene
-        activeSpline = splines[0];
-        splineModels = []
-        for (let i = 0; i < activeSpline.posPoints.length; i++){
-            singleColorCube(7)
-            let model = new Model(gl)
-            model.setData(gl, pointsArray, colorsArray)
-            let pos = activeSpline.posPoints[i]
-            model.transform = mult(translate(pos[0], pos[1], pos[2]), scalem(0.5,0.5,0.5))
-            splineModels.push(model)
-        }
+    // Define fish spline path
+    let fishSplinePos = [
+        vec3(-10,0,0),
+        vec3(-1,-2,-1),
+        vec3(-5,2,-2),
+        vec3(-2,1,-4),
+        vec3(-1,1.5,-4),
+        vec3(0,9,-5),
+        vec3(0,13,-4),
+        vec3(-10,23,-5),
+    ]
+    let fishSplineRot = []
+    for (let i = 0; i < fishSplinePos.length; i++){
+        fishSplineRot.push(vec3())
     }
-
+    let activeSpline = new Spline(10, fishSplinePos, fishSplineRot)
+    
 
 	// Define camera settings
 	let cameraProjection = perspective(90,canvas.width/canvas.height,.1, 100);
@@ -564,6 +527,7 @@ function main()
     }
     modelRoot.transform = rotateY(45)
 
+    let reset = true
     let elapsedTime = 0
     let distTravelled = 0
     let lastTime = 0
@@ -586,14 +550,24 @@ function main()
         gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+        // Animate the fish movement
+        let delta = (currTime - lastTime)/1000
+        let splinePos = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+delta)/activeSpline.time)
+        let splinePos2 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime)/activeSpline.time)
 
-
-        fishBody.transform = rotateX(180);
+        if (!equal(cross(vec3(splinePos2),vec3(splinePos)), vec3())){ // Handle edge case when cross vector becomes zero
+            lookAtTransform = inverse(lookAt(vec3(splinePos2), vec3(splinePos), vec3(0, 1, 0)))
+        }
+        fishBody.transform = mult(lookAtTransform, rotateY(-90))
+        
+        
         drawModel(fishHead,gl.TRIANGLES);
         drawModel(fishBody, gl.TRIANGLES);
         drawModel(fishTail, gl.TRIANGLES);
         drawModel(fishTopFin, gl.TRIANGLES);
         drawModel(fishBottomFin, gl.TRIANGLES);
+
+        
         for (let segment of fishingRodSegments) {
             drawModel(segment, gl.TRIANGLES);
         }
@@ -604,6 +578,7 @@ function main()
         drawModel(forearm, gl.TRIANGLES);
         drawModel(hand, gl.TRIANGLES);
         lastTime = currTime
+        elapsedTime += delta
         requestAnimationFrame(render);
     }
     requestAnimationFrame(render);
