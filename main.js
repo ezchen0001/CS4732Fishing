@@ -93,6 +93,7 @@ function singleColorCube(color){
     quad( 5, 4, 0, 1, color);
 }
 
+
 // Container for model data
 class Model {
 
@@ -223,6 +224,68 @@ class Spline {
     }
 }
 
+class Tween {
+    // func is a function that takes a float
+    // time is in seconds
+    constructor(time, startValue, endValue, func){
+        this.func = func
+        this.elapsedTime = 0
+        this.duration = time
+        this.startValue = startValue
+        this.endValue = endValue
+    }
+    update(dt){
+        this.elapsedTime += dt
+        let a = this.elapsedTime/this.duration
+        this.func((1-a) * this.startValue + a*this.endValue)
+    }
+}
+
+let TweenManager = {
+    tweens: [],
+    addTween: function(tween){
+        this.tweens.push(tween)
+    },
+    update: function(dt){
+        for (let i = this.tweens.length-1; i >= 0; i--){
+            let tween = this.tweens[i]
+            tween.update(dt)
+            if (tween.elapsedTime > tween.duration){
+                this.tweens.splice(i)
+            }
+        }
+    }
+}
+
+
+class Timeline {
+    // time is in seconds
+    constructor(duration){
+        this.duration = duration
+        this.elapsedTime = 0
+        this.lastTriggerIndex = -1
+        this.triggers = []
+    }   
+    addTrigger(time, triggerFunc){
+        this.triggers.push([time, triggerFunc])
+        //this.triggers.sort((a,b) => a[0] - b[0])
+    }
+    update(dt){
+        for (let i = 0; i < this.triggers.length; i++){
+            let trigger = this.triggers[i]
+            if (trigger[0] >= this.elapsedTime && trigger[0] < this.elapsedTime + dt){
+                trigger[1]()
+            }
+        }
+        this.elapsedTime += dt
+        if (this.elapsedTime > this.duration){
+            this.elapsedTime = 0
+        }
+    }
+
+}
+
+
 function degToRad(deg) {
     return deg * Math.PI / 180;
   }
@@ -260,7 +323,6 @@ function quatToMatrix(q) {
 
 
 function magnitude(v){
-
     return Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])
 }
 
@@ -527,6 +589,22 @@ function main()
     }
     modelRoot.transform = rotateY(45)
 
+
+    // Timeline definition
+    let timeline = new Timeline(10)
+    timeline.addTrigger(0, function(){
+        TweenManager.addTween(new Tween(10, 0, 1, function(a){
+            //Move fish
+            let splinePos = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+0.03)/activeSpline.time)
+            let splinePos2 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime)/activeSpline.time)
+    
+            if (!equal(cross(vec3(splinePos2),vec3(splinePos)), vec3())){ // Handle edge case when cross vector becomes zero
+                lookAtTransform = inverse(lookAt(vec3(splinePos2), vec3(splinePos), vec3(0, 1, 0)))
+            }
+            fishBody.transform = mult(lookAtTransform, rotateY(-90))
+        }))
+    })
+
     let reset = true
     let elapsedTime = 0
     let distTravelled = 0
@@ -552,14 +630,11 @@ function main()
 
         // Animate the fish movement
         let delta = (currTime - lastTime)/1000
-        let splinePos = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+delta)/activeSpline.time)
-        let splinePos2 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime)/activeSpline.time)
-
-        if (!equal(cross(vec3(splinePos2),vec3(splinePos)), vec3())){ // Handle edge case when cross vector becomes zero
-            lookAtTransform = inverse(lookAt(vec3(splinePos2), vec3(splinePos), vec3(0, 1, 0)))
-        }
-        fishBody.transform = mult(lookAtTransform, rotateY(-90))
         
+
+        timeline.update(delta)
+        TweenManager.update(delta)
+
         
         drawModel(fishHead,gl.TRIANGLES);
         drawModel(fishBody, gl.TRIANGLES);
@@ -572,7 +647,7 @@ function main()
             drawModel(segment, gl.TRIANGLES);
         }
 
-
+        
 
         drawModel(upperArm, gl.TRIANGLES);
         drawModel(forearm, gl.TRIANGLES);
@@ -585,6 +660,8 @@ function main()
 
 
 }
+
+
 function createFin(color) {
     pointsArray.length = 0;
     colorsArray.length = 0;
