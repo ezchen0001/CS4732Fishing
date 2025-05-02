@@ -234,10 +234,31 @@ class Tween {
         this.startValue = startValue
         this.endValue = endValue
     }
-    update(dt){
+    update(dt){ // Lerp
         this.elapsedTime += dt
         let a = this.elapsedTime/this.duration
         this.func((1-a) * this.startValue + a*this.endValue)
+    }
+}
+
+class MotionTween{
+    // Doesn't actually lerp anything
+    constructor(time, initVelocity, gravity, dragCoef, func){
+        this.func = func
+        this.duration = time
+        this.velocity = initVelocity//vec3(0,0,0)
+        this.gravity = gravity
+        this.dragCoef = dragCoef
+        this.pos = vec3(0,0,0)
+        this.elapsedTime = 0
+        
+    }
+    update(dt){
+        this.elapsedTime += dt
+        this.velocity = add(this.velocity, scale(dt, this.gravity))
+        this.velocity = scale(this.dragCoef, this.velocity)
+        this.pos = add(this.pos, scale(dt, this.velocity))
+        this.func(this.pos, this.velocity)
     }
 }
 
@@ -251,7 +272,7 @@ let TweenManager = {
             let tween = this.tweens[i]
             tween.update(dt)
             if (tween.elapsedTime > tween.duration){
-                this.tweens.splice(i)
+                this.tweens.splice(i, 1)
             }
         }
     }
@@ -263,23 +284,22 @@ class Timeline {
     constructor(duration){
         this.duration = duration
         this.elapsedTime = 0
-        this.lastTriggerIndex = -1
+        this.lastTriggerIndex = 0
         this.triggers = []
     }   
     addTrigger(time, triggerFunc){
         this.triggers.push([time, triggerFunc])
-        //this.triggers.sort((a,b) => a[0] - b[0])
+        this.triggers.sort((a,b) => a[0] - b[0])
     }
     update(dt){
-        for (let i = 0; i < this.triggers.length; i++){
-            let trigger = this.triggers[i]
-            if (trigger[0] >= this.elapsedTime && trigger[0] < this.elapsedTime + dt){
-                trigger[1]()
-            }
-        }
         this.elapsedTime += dt
+        while (this.lastTriggerIndex < this.triggers.length && this.triggers[this.lastTriggerIndex][0] <= this.elapsedTime){
+            this.triggers[this.lastTriggerIndex][1]()
+            this.lastTriggerIndex++;
+        }
         if (this.elapsedTime > this.duration){
             this.elapsedTime = 0
+            this.lastTriggerIndex = 0
         }
     }
 
@@ -504,6 +524,17 @@ function main()
     hand.setParent(forearm);
     hand.transform = translate(.0, 1.0, 0.0); // straight down from forearm tip
 
+
+
+    // Create bait
+    let bait = new Model(gl)
+    singleColorCube(5);
+    multCube(mult(translate(0, 0.0, 0.0), scalem(0.2, 0.1, 0.1)));
+    bait.setData(gl, pointsArray, colorsArray);
+
+
+
+
     // Define function for drawing a model
     function drawModel(model, primitive) {
         gl.bindBuffer(gl.ARRAY_BUFFER, model.posBuffer);
@@ -518,28 +549,17 @@ function main()
         gl.drawArrays(primitive, 0, model.bufferLength);
     }
 
-    // Retrieve <form> element and connect the file input event
-    let input = document.getElementById("files");
-
-    // Use file reader when user uploads SVG file
-    let reader;
-    input.addEventListener("input", function(e){
-        if (e.target.files.length === 0) return; // skip if no file found
-        reader = readTextFile(e);
-        reader.addEventListener("load", onFileLoad);
-    });
-
 
     // Define fish spline path
     let fishSplinePos = [
-        vec3(-10,0,0),
-        vec3(-1,-2,-1),
-        vec3(-5,2,-2),
-        vec3(-2,1,-4),
-        vec3(-1,1.5,-4),
-        vec3(0,9,-5),
-        vec3(0,13,-4),
-        vec3(-10,23,-5),
+        vec3(-10,-10,0),
+        vec3(-1,-12,-1),
+        vec3(-5,-8,-2),
+        vec3(-2,-9,-4),
+        vec3(-1,-8.5,-4),
+        vec3(0,-1,-5),
+        vec3(0,0,-4),
+        vec3(-10,0,-5),
     ]
     let fishSplineRot = []
     for (let i = 0; i < fishSplinePos.length; i++){
@@ -550,51 +570,14 @@ function main()
 
 	// Define camera settings
 	let cameraProjection = perspective(90,canvas.width/canvas.height,.1, 100);
-    let cameraPos = vec3(0,7.5,5)
+    let cameraPos = vec3(5,5,5)
 	let cameraTarget = vec3(0,5,0)
-
-    // Define model
-    let modelRoot = new Model(gl)
-
-    let modelLegs = [ // Upper leg, lower leg, foot
-        [new Model(gl), new Model(gl), new Model(gl)],
-        [new Model(gl), new Model(gl), new Model(gl)]
-    ]
-
-    // Create model geometry
-    colorCube()
-    modelRoot.setData(gl, pointsArray, colorsArray)
-    for (let legIndex = 0; legIndex < modelLegs.length; legIndex++){
-        let legArr = modelLegs[legIndex]
-        for (let i = 0; i < legArr.length; i++){
-            if (i == 0){
-                legArr[i].setParent(modelRoot)
-            }else{
-                legArr[i].setParent(legArr[i-1])
-            }
-            colorCube()
-            multCube(mult(scalem(0.3,1,0.3),translate(0,-1,0)))
-            if (i == 2){
-                multCube(scalem(1,0.5,1))
-                multCube(rotateX(90))
-            }
-            legArr[i].setData(gl, pointsArray, colorsArray)
-        }
-
-        // Pose the initial model transformations
-        let hOffset = legIndex == 0 ? 0.5 : -0.5
-        legArr[0].transform = translate(hOffset,-1,0)
-        legArr[1].transform = translate(0,-2,0)
-        legArr[2].transform = translate(0,-2,0)
-    }
-    modelRoot.transform = rotateY(45)
-
 
     // Timeline definition
     let timeline = new Timeline(10)
+    //Move fish
     timeline.addTrigger(0, function(){
         TweenManager.addTween(new Tween(10, 0, 1, function(a){
-            //Move fish
             let splinePos = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+0.03)/activeSpline.time)
             let splinePos2 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime)/activeSpline.time)
     
@@ -604,11 +587,41 @@ function main()
             fishBody.transform = mult(lookAtTransform, rotateY(-90))
         }))
     })
+    // Throw bait
+    timeline.addTrigger(0, function(){
+        bait.transform = translate(vec3(-5,4,0))
+    })
+    timeline.addTrigger(1, function(){
+        let startPos = vec3(-5,4,0)
+        TweenManager.addTween(new MotionTween(2.207, vec3(3,16,0), vec3(0,-16,0), 1, function(offset, vel){
+            bait.transform = translate(add(startPos, offset))
+        }))
+    })
+    timeline.addTrigger(3.207, function(){
+        let startPos = vec3(1.5,0,0)
+        TweenManager.addTween(new MotionTween(7, vec3(0,-32,0), vec3(0,-16,0), 0.8, function(offset, vel){
+            bait.transform = translate(add(startPos, offset))
+        }))
+    })
+
+    // Camera pan
+    timeline.addTrigger(0, function(){
+        cameraPos = vec3(5,5,5)
+        cameraTarget = vec3(0,5,0)
+    })
+    timeline.addTrigger(2, function(){
+        TweenManager.addTween(new Tween(4, 5, -2, function(a){
+            cameraPos = vec3(5,a,5)
+            cameraTarget = vec3(0,a,0)
+        }))
+    })
+
 
     let reset = true
     let elapsedTime = 0
     let distTravelled = 0
     let lastTime = 0
+    let accumulatedTime = 0
     let lookAtTransform = mat4()
     function render(currTime){
         let modelMatrixLoc = gl.getUniformLocation(program,'modelMatrix')
@@ -630,11 +643,14 @@ function main()
 
         // Animate the fish movement
         let delta = (currTime - lastTime)/1000
+        accumulatedTime += delta
         
-
-        timeline.update(delta)
-        TweenManager.update(delta)
-
+        
+        while (accumulatedTime > 1/60){
+            timeline.update(1/60)
+            TweenManager.update(1/60)
+            accumulatedTime -= 1/60
+        }
         
         drawModel(fishHead,gl.TRIANGLES);
         drawModel(fishBody, gl.TRIANGLES);
@@ -647,7 +663,7 @@ function main()
             drawModel(segment, gl.TRIANGLES);
         }
 
-        
+        drawModel(bait, gl.TRIANGLES)
 
         drawModel(upperArm, gl.TRIANGLES);
         drawModel(forearm, gl.TRIANGLES);
