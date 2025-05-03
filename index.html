@@ -5,33 +5,48 @@
     <title>CS 4732 Project 2</title>
 
     <script id="vshader" type="x-shader/x-vertex">
-        attribute  vec4 vPosition;
-        attribute  vec4 vColor;
+        attribute vec4 vPosition;
+        attribute vec4 vColor;
+        attribute vec4 weights;
+
         uniform mat4 modelMatrix;
         uniform mat4 projMatrix;
         uniform mat4 cameraMatrix;
+        uniform bool useBones;
+
+        uniform mat4 boneMatrix0;
+        uniform mat4 boneMatrix1;
+        uniform mat4 boneMatrix2;
+        uniform mat4 boneMatrix3;
+        uniform mat4 boneMatrix4;
 
         varying vec4 fColor;
 
-        uniform float theta;
-
-        void main()
-        {
+        void main() {
             fColor = vColor;
-//vec4 worldPos = modelMatrix * vPosition;
 
-            gl_Position = projMatrix * cameraMatrix *modelMatrix* vPosition;
-        
+            if (useBones) {
+                // Apply bone transformations for the fishing rod
+                mat4 skinMatrix =
+                    weights.x * boneMatrix0 +
+                    weights.y * boneMatrix1 +
+                    weights.z * boneMatrix2 +
+                    weights.w * boneMatrix3 +
+                    (1.0 - weights.x - weights.y - weights.z - weights.w) * boneMatrix4;
+
+                gl_Position = projMatrix * cameraMatrix * modelMatrix * skinMatrix * vPosition;
+            } else {
+                // Standard transformation for all other objects
+                gl_Position = projMatrix * cameraMatrix * modelMatrix * vPosition;
+            }
         }
-
     </script>
 
     <script id="fshader" type="x-shader/x-fragment">
         precision mediump float;
         varying vec4 fColor;
 
-        void main()
-        {
+        void main() {
             gl_FragColor = fColor;
         }
     </script>

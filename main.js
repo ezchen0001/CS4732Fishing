@@ -251,7 +251,7 @@ class MotionTween{
         this.dragCoef = dragCoef
         this.pos = vec3(0,0,0)
         this.elapsedTime = 0
-        
+
     }
     update(dt){
         this.elapsedTime += dt
@@ -286,7 +286,7 @@ class Timeline {
         this.elapsedTime = 0
         this.lastTriggerIndex = 0
         this.triggers = []
-    }   
+    }
     addTrigger(time, triggerFunc){
         this.triggers.push([time, triggerFunc])
         this.triggers.sort((a,b) => a[0] - b[0])
@@ -370,6 +370,8 @@ function main()
     gl.viewport( 0, 0, 400, 400);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
+    gl.disable(gl.CULL_FACE);
+
     gl.cullFace(gl.BACK);
 
     // Define attribute pointers
@@ -407,11 +409,44 @@ function main()
     singleColorCube(2); // Yellow color
     multCube(scalem(2.0, 1.0, 1.0)); // Stretch in X direction
     fishBody.setData(gl, pointsArray, colorsArray);
+    pointsArray = [];
+    colorsArray = [];
 
-// Tail - vertical fin
-    singleColorCube(4); // Blue color
-    multCube(mult(translate(-1.2, 0.0, 0.0), scalem(0.5, 1.0, 0.5)));
+    let tailVertices = [
+        vec4(0.0, 0.0, 0.0, 1.0),        // base center
+        vec4(-0.25, 0.0, 0.0, 1.0),      // base left
+        vec4(0.25, 0.0, 0.0, 1.0),       // base right
+        vec4(0.0, 0.5, 0.0, 1.0)         // tip
+    ];
+
+    function addFin(offsetX) {
+        // Copy and offset each vertex in Z direction
+        let v0 = add(tailVertices[0], vec4(offsetX, 0, 0, 0));
+        let v1 = add(tailVertices[1], vec4(offsetX, 0, 0, 0));
+        let v2 = add(tailVertices[2], vec4(offsetX, 0, 0, 0));
+        let v3 = add(tailVertices[3], vec4(offsetX, 0, 0, 0));
+
+        pointsArray.push(v1); colorsArray.push(vertexColors[4]);
+        pointsArray.push(v0); colorsArray.push(vertexColors[4]);
+        pointsArray.push(v3); colorsArray.push(vertexColors[4]);
+
+        pointsArray.push(v0); colorsArray.push(vertexColors[4]);
+        pointsArray.push(v2); colorsArray.push(vertexColors[4]);
+        pointsArray.push(v3); colorsArray.push(vertexColors[4]);
+    }
+
+// Add left and right fins, offset in Z
+    addFin(.7);  // left fin
+    addFin(.15);   // right fin
+
+    let tailScale = scalem(3.0, 4.0, 3.0);
+    for (let i = 0; i < pointsArray.length; i++) {
+        pointsArray[i] = mult(tailScale, pointsArray[i]);
+    }
+
     fishTail.setData(gl, pointsArray, colorsArray);
+    fishTail.transform = translate(-1.2, 0.0, 0.0);
+
 // --- Manually build Top Fin ---
     pointsArray = [];
     colorsArray = [];
@@ -463,7 +498,7 @@ function main()
         pointsArray[i] = mult(scaleMatrix, pointsArray[i]);
     }
     fishBottomFin.setData(gl, pointsArray, colorsArray);
-    fishBottomFin.transform = translate(0.0, -1, 0.0);
+    fishBottomFin.transform = translate(0.0, -.5, 0.0);
 
 // Set parent relationships
     fishTail.setParent(fishBody);
@@ -472,33 +507,182 @@ function main()
 
 // Set local transforms
     fishBody.transform = mat4(); // Identity
+
     fishTail.transform = translate(-1.2, 0.0, 0.0);
 
 
+    //
+    //  let fishingRodSegments = []; // array to hold all rod pieces
+    // let numSegments = 5; // how many cubes for the rod
+    //
+    // for (let i = 0; i < numSegments; i++) {
+    //     let segment = new Model(gl);
+    //
+    //     colorCube(); // create cube
+    //     multCube(scalem(0.05, 1, 0.05)); // make it thin and tall
+    //     segment.setData(gl, pointsArray, colorsArray);
+    //
+    //     if (i == 0) {
+    //         segment.setParent(null); // base of the rod, no parent
+    //         segment.transform = translate(3.0, 0.0, 0.0); // place off to the right
+    //     } else {
+    //         segment.setParent(fishingRodSegments[i-1]); // chain to previous
+    //         segment.transform = translate(0.0, .6, 0.0); // move upward
+    //     }
+    //     fishingRodSegments.push(segment);
+    // }
 
-     let fishingRodSegments = []; // array to hold all rod pieces
-    let numSegments = 5; // how many cubes for the rod
+    // Replace the existing rodWeights creation code with this improved version
+// This creates better weight distribution for smoother bending
+    let rodPoints = [];
+    let rodWeights = [];
+    let rodColors = [];
+    let rodBoneCount = 5;
 
-    for (let i = 0; i < numSegments; i++) {
-        let segment = new Model(gl);
+// Create rod vertices with manually defined weights
+// Each segment consists of 12 vertices (6 vertices for front face, 6 for back face)
 
-        colorCube(); // create cube
-        multCube(scalem(0.05, 1, 0.05)); // make it thin and tall
-        segment.setData(gl, pointsArray, colorsArray);
+// Define segment positions
+    for (let i = 0; i < rodBoneCount; i++) {
+        // Position of current segment
+        let yBase = i/10 * 1.0;
+        let yTop = (i/10 + .01) * 1.0;
 
-        if (i == 0) {
-            segment.setParent(null); // base of the rod, no parent
-            segment.transform = translate(3.0, 0.0, 0.0); // place off to the right
-        } else {
-            segment.setParent(fishingRodSegments[i-1]); // chain to previous
-            segment.transform = translate(0.0, .6, 0.0); // move upward
+        // Two triangles for quad segment (front side)
+        rodPoints.push(vec4(-0.05, yBase, 0.0, 1.0));    // 0
+        rodPoints.push(vec4( 0.05, yBase, 0.0, 1.0));    // 1
+        rodPoints.push(vec4( 0.05, yTop, 0.0, 1.0));     // 2
+
+        rodPoints.push(vec4(-0.05, yBase, 0.0, 1.0));    // 3
+        rodPoints.push(vec4( 0.05, yTop, 0.0, 1.0));     // 4
+        rodPoints.push(vec4(-0.05, yTop, 0.0, 1.0));     // 5
+
+        // Two triangles for quad segment (back side)
+        rodPoints.push(vec4(-0.05, yBase, -0.02, 1.0));  // 6
+        rodPoints.push(vec4( 0.05, yBase, -0.02, 1.0));  // 7
+        rodPoints.push(vec4( 0.05, yTop, -0.02, 1.0));   // 8
+
+        rodPoints.push(vec4(-0.05, yBase, -0.02, 1.0));  // 9
+        rodPoints.push(vec4( 0.05, yTop, -0.02, 1.0));   // 10
+        rodPoints.push(vec4(-0.05, yTop, -0.02, 1.0));   // 11
+
+        // Brown color for each vertex
+        for (let j = 0; j < 12; j++) {
+            rodColors.push(vec4(0.65, 0.35, 0.2, 1.0)); // wooden brown
         }
-        fishingRodSegments.push(segment);
     }
 
+// Manually define weights for each vertex in each segment
+// Format: [bone0_weight, bone1_weight, bone2_weight, bone3_weight, bone4_weight]
 
+// SEGMENT 0 (Bottom segment)
+// Bottom vertices (4 vertices - two at front, two at back)
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 0 - fully influenced by bone 0
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 1 - fully influenced by bone 0
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 6 - fully influenced by bone 0
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 7 - fully influenced by bone 0
 
+// Top vertices (8 vertices - four at front, four at back)
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 2 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 4 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 5 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 3 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 8 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 10 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 11 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 9 - blend between bone 0 and 1
 
+// SEGMENT 1
+// Bottom vertices (4 vertices)
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
+
+// Top vertices (8 vertices)
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+
+// SEGMENT 2
+// Bottom vertices (4 vertices)
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
+
+// Top vertices (8 vertices)
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+
+// SEGMENT 3
+// Bottom vertices (4 vertices)
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
+
+// Top vertices (8 vertices)
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+
+// SEGMENT 4 (Top segment)
+// Bottom vertices (4 vertices)
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
+
+// Top vertices (8 vertices)
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+
+// Buffers for deformable rod
+    let rodPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, rodPositionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(rodPoints), gl.STATIC_DRAW);
+    vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+// Bone weights
+    let rodWeightBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, rodWeightBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(rodWeights), gl.STATIC_DRAW);
+    let wAttrib = gl.getAttribLocation(program, "weights");
+    gl.vertexAttribPointer(wAttrib, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(wAttrib);
+
+// Color buffer
+    let rodColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, rodColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(rodColors), gl.STATIC_DRAW);
+    let cAttrib = gl.getAttribLocation(program, "vColor");
+    gl.vertexAttribPointer(cAttrib, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(cAttrib);
 // ---- BUILD ARM ----
     let upperArm = new Model(gl);
     let forearm = new Model(gl);
@@ -566,7 +750,7 @@ function main()
         fishSplineRot.push(vec3())
     }
     let activeSpline = new Spline(10, fishSplinePos, fishSplineRot)
-    
+
 
 	// Define camera settings
 	let cameraProjection = perspective(90,canvas.width/canvas.height,.1, 100);
@@ -575,12 +759,65 @@ function main()
 
     // Timeline definition
     let timeline = new Timeline(10)
+    // Add these timeline events to create realistic rod bending
+// especially when the bait is cast
+
+// Timeline event for fishing rod bending
+    timeline.addTrigger(1, function() {
+        // Start rod bending right before the bait is cast
+        TweenManager.addTween(new Tween(0.5, 0, 1, function(t) {
+            // t goes from 0 to 1 over 0.5 seconds
+            // This tween sets up an initial bend before casting
+            // Actual animation handled in render loop
+
+            // You can add any one-time setup here if needed
+            // The rod bending animation will be handled in the render function
+        }));
+    });
+
+// Add rod recoil after the bait is cast
+    timeline.addTrigger(1.5, function() {
+        TweenManager.addTween(new Tween(0.7, 1, 0, function(t) {
+            // t goes from 1 to 0 over 0.7 seconds
+            // This creates a recoil effect after casting
+            // Actual animation handled in render loop
+        }));
+    });
+
+// Add subtle rod motion when bait hits water
+    timeline.addTrigger(3.207, function() {
+        TweenManager.addTween(new Tween(0.5, 0, 1, function(t) {
+            // t goes from 0 to 1 over 0.5 seconds
+            // Creates a subtle vibration when bait hits water
+            // Actual animation handled in render loop
+        }));
+    });
+    timeline.addTrigger(2, function() {
+        TweenManager.addTween(new Tween(2, 0, 1, function(t) {
+            // t goes from 0 to 1 over 2 seconds
+
+            // Max bend angle (in degrees)
+            let maxAngle = 45;
+
+            // for (let i = 1; i < fishingRodSegments.length; i++) {
+            //     // Interpolate angle based on segment index and t
+            //     let angle = t * (i / fishingRodSegments.length) * maxAngle;
+            //
+            //     // Set transform: rotate and translate upward
+            //     fishingRodSegments[i].transform = mult(
+            //         translate(0.0, 0.6, 0.0),
+            //         rotateZ(-angle)
+            //     );
+            // }
+        }));
+    });
+
     //Move fish
     timeline.addTrigger(0, function(){
         TweenManager.addTween(new Tween(10, 0, 1, function(a){
             let splinePos = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+0.03)/activeSpline.time)
             let splinePos2 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime)/activeSpline.time)
-    
+
             if (!equal(cross(vec3(splinePos2),vec3(splinePos)), vec3())){ // Handle edge case when cross vector becomes zero
                 lookAtTransform = inverse(lookAt(vec3(splinePos2), vec3(splinePos), vec3(0, 1, 0)))
             }
@@ -638,30 +875,121 @@ function main()
         gl.uniformMatrix4fv(uCamera, false, flatten(lookAt(cameraPos,cameraTarget,vec3(0,1,0))));
 
         // Clear buffers
-        gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+        gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
+
+
+
 
         // Animate the fish movement
         let delta = (currTime - lastTime)/1000
         accumulatedTime += delta
-        
-        
+
+
         while (accumulatedTime > 1/60){
             timeline.update(1/60)
             TweenManager.update(1/60)
             accumulatedTime -= 1/60
         }
-        
+
         drawModel(fishHead,gl.TRIANGLES);
         drawModel(fishBody, gl.TRIANGLES);
         drawModel(fishTail, gl.TRIANGLES);
         drawModel(fishTopFin, gl.TRIANGLES);
         drawModel(fishBottomFin, gl.TRIANGLES);
 
-        
-        for (let segment of fishingRodSegments) {
-            drawModel(segment, gl.TRIANGLES);
+
+        // for (let segment of fishingRodSegments) {
+        //     drawModel(segment, gl.TRIANGLES);
+        // }
+
+
+
+
+
+
+// Update the rod bone animation in the render function
+// Replace the existing rod bones section with this code:
+
+// Rod bone animation section
+        let rodBones = [];
+        for (let i = 0; i < rodBoneCount; i++) {
+            // Create more natural bending by having increasing angles down the rod
+            // Timeline-based animation with sine wave for gentle oscillation
+            let baseAngle = 0;
+
+            // Add increasing bend when triggered by timeline events
+            if (elapsedTime > 2 && elapsedTime < 6) {
+                // Gradually increase bend from 2-4 seconds, hold, then decrease 4-6 seconds
+                let bendFactor = 0;
+                if (elapsedTime < 4) {
+                    bendFactor = (elapsedTime - 2) / 2; // 0 to 1 over 2 seconds
+                } else {
+                    bendFactor = 1 - ((elapsedTime - 4) / 2); // 1 to 0 over 2 seconds
+                }
+
+                // Each segment bends more than the previous
+                baseAngle = -25 * bendFactor * ((i + 1) / rodBoneCount);
+            }
+
+            // Add gentle oscillation
+            let oscillation = Math.sin(elapsedTime * 2 + i * 0.3) * 5;
+
+            // Combine base angle with oscillation
+            let angle = baseAngle + oscillation * ((i + 1) / rodBoneCount);
+
+            // Create transformation matrices
+            let rotation = rotateZ(angle);
+
+            // Position offset between bones
+            let offset = translate(0.0, 1.0, 0.0);
+
+            // IMPORTANT: For bone skinning, we need to create each bone matrix relative to bind pose
+            // So we build each bone's matrix by multiplying previous bone matrices
+            if (i === 0) {
+                // First bone - set position
+                rodBones[i] = mult(translate(3.0, 0.0, 0.0), rotation);
+            } else {
+                // Subsequent bones - inherit parent transformation and add local one
+                rodBones[i] = mult(rodBones[i-1], mult(offset, rotation));
+            }
+
+            // Send bone matrix to shader
+            gl.uniformMatrix4fv(gl.getUniformLocation(program, `boneMatrix${i}`), false, flatten(rodBones[i]));
         }
+
+// Make sure to add this uniform to enable bone skinning when drawing the rod
+        gl.uniform1i(gl.getUniformLocation(program, "useBones"), true);
+
+// Draw the skinned fishing rod
+        gl.bindBuffer(gl.ARRAY_BUFFER, rodPositionBuffer);
+        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vPosition);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, rodWeightBuffer);
+        gl.vertexAttribPointer(wAttrib, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(wAttrib);
+
+// Set model matrix to position the entire rod
+        gl.uniformMatrix4fv(uModel, false, flatten(translate(0, 0, 0)));
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, rodPoints.length);
+
+// Reset the bone usage for other objects
+        gl.uniform1i(gl.getUniformLocation(program, "useBones"), false);
+
+
+
+
+
+
+
+
+
+
+        gl.uniform1i(gl.getUniformLocation(program, "useBones"), false);
 
         drawModel(bait, gl.TRIANGLES)
 
