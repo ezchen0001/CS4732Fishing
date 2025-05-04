@@ -22,6 +22,7 @@ Implementation requirements:
 One of the challenges we had to face in our project was figuring out a way to sync up all the movements and deformations to create an animation. To do this, we built a custom time-based trigger system that allowed us to activate tweens and functions at specific points in time, and for specific durations as well. In addition, the skinning of the fishing rod and modeling of the rest of the objects took a lot of time to get right since everything was hardcoded.
 
 Task responsibilities:
+
 Ethan:
 - creating/animating the fish spline
 - animating the bait with a physics system
