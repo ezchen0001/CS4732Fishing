@@ -2,8 +2,12 @@
     CS 4732 - Project 1
     @author Ethan Chen
 */
+let rodBaseAngle = 0; // GLOBAL variable to track base rod bend
 
-
+function lerp(a, b, t) {
+    return (1 - t) * a + t * b;
+}
+let upperArm,forearm,hand
 // Toggling functionality for interface
 let usingCatmullRom = false
 
@@ -240,6 +244,65 @@ class Tween {
         this.func((1-a) * this.startValue + a*this.endValue)
     }
 }
+
+// --- Inserted FK/IK skeletal animation logic for arm casting ---
+// Improved bone structure for upper arm and forearm
+let bones = [
+    { x: 0, y: 0, angle: 0, length: 1 }, // upper arm
+    { x: 0, y: 0, angle: 0, length: 1 }  // forearm
+];
+let target = { x: 0.4, y: 1.0 }; // target that arm reaches towards
+
+// Fixed IK function that properly calculates joint angles
+function inverseKinematics(targetX, targetY) {
+    L1 = bones[0].length;
+    L2 = bones[1].length;
+
+    // Calculate distance to target
+    let distance = Math.sqrt(targetX * targetX + targetY * targetY);
+
+    // Clamp distance to maximum reach
+    distance = Math.min(distance, L1 + L2 - 0.01);
+
+    // Calculate joint angles using law of cosines
+    let cos_theta2 = (distance*distance - L1*L1 - L2*L2) / (2 * L1 * L2);
+    // Clamp to valid range to avoid NaN
+    cos_theta2 = Math.max(-1, Math.min(1, cos_theta2));
+
+    // Calculate theta2 - angle of the elbow
+    theta2 = Math.acos(cos_theta2);
+
+    // Calculate theta1 - angle of the shoulder
+    let targetAngle = Math.atan2(targetY, targetX);
+    let phi = Math.atan2(L2 * Math.sin(theta2), L1 + L2 * Math.cos(theta2));
+    theta1 = targetAngle - phi;
+}
+
+// Improved forward kinematics that properly positions joints
+function forwardKinematics() {
+    // Set the angles for the bones based on IK solution
+    bones[0].angle = theta1;
+    bones[1].angle = theta1 + theta2;
+
+    // Calculate joint positions
+    bones[0].x = 0; // Upper arm origin
+    bones[0].y = 0;
+
+    // Position of elbow joint
+    bones[1].x = L1 * Math.cos(theta1);
+    bones[1].y = L1 * Math.sin(theta1);
+
+    // Calculate end effector position (hand)
+    let endX = bones[1].x + L2 * Math.cos(bones[1].angle);
+    let endY = bones[1].y + L2 * Math.sin(bones[1].angle);
+
+    return { x: endX, y: endY };
+}
+
+function degrees(rad) {
+    return rad * 180 / Math.PI;
+}
+
 
 class MotionTween{
     // Doesn't actually lerp anything
@@ -684,9 +747,9 @@ function main()
     gl.vertexAttribPointer(cAttrib, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(cAttrib);
 // ---- BUILD ARM ----
-    let upperArm = new Model(gl);
-    let forearm = new Model(gl);
-    let hand = new Model(gl);
+    upperArm = new Model(gl);
+     forearm = new Model(gl);
+     hand = new Model(gl);
 
 // Create Upper Arm (flat and long)
     colorCube();
@@ -760,7 +823,44 @@ function main()
     // Timeline definition
     let timeline = new Timeline(10)
     // Add these timeline events to create realistic rod bending
-// especially when the bait is cast
+/// Improved timeline events for casting animation
+    timeline.addTrigger(1, function() {
+        // Wind up - dramatic arm bend with forearm rotated up
+        TweenManager.addTween(new Tween(0.8, 0, 1, function(t) {
+            let pullBackX = lerp(0.4, -0.1, t);
+            let pullBackY = lerp(1.0, 1.8, t);
+            updateArmIKToTarget(pullBackX, pullBackY);
+        }));
+    });
+
+    timeline.addTrigger(2, function() {
+        // Forward cast - visible forearm extension
+        TweenManager.addTween(new Tween(0.4, 0, 1, function(t) {
+            let castX = lerp(-0.1, 1.5, t);
+            let castY = lerp(1.8, 0.5, t);
+            updateArmIKToTarget(castX, castY);
+        }));
+    });
+
+    timeline.addTrigger(2.5, function() {
+        // Follow through - settle back with slight lift
+        TweenManager.addTween(new Tween(0.5, 0, 1, function(t) {
+            let followX = lerp(1.5, 1.3, t);
+            let followY = lerp(0.5, 0.7, t);
+            updateArmIKToTarget(followX, followY);
+        }));
+    });
+
+    timeline.addTrigger(3.5, function() {
+        // Subtle oscillation while holding rod
+        TweenManager.addTween(new Tween(6.5, 0, 1, function(t) {
+            let holdX = 1.3 + Math.sin(t * 6) * 0.03;  // match follow-through X position
+            let holdY = 0.7 + Math.sin(t * 4) * 0.02;  // match follow-through Y position
+            updateArmIKToTarget(holdX, holdY);
+        }));
+    });
+
+// --- End FK/IK arm casting integration ---
 
 // Timeline event for fishing rod bending
     timeline.addTrigger(1, function() {
@@ -843,6 +943,7 @@ function main()
 
     // Camera pan
     timeline.addTrigger(0, function(){
+        elapsedTime=0
         cameraPos = vec3(5,5,5)
         cameraTarget = vec3(0,5,0)
     })
@@ -919,29 +1020,46 @@ function main()
             // Create more natural bending by having increasing angles down the rod
             // Timeline-based animation with sine wave for gentle oscillation
             let baseAngle = 0;
+            let finalBendAngle = -15; // Maintain a slight bend after animation completes
 
             // Add increasing bend when triggered by timeline events
-            if (elapsedTime > 2 && elapsedTime < 6) {
-                // Gradually increase bend from 2-4 seconds, hold, then decrease 4-6 seconds
-                let bendFactor = 0;
-                if (elapsedTime < 4) {
-                    bendFactor = (elapsedTime - 2) / 2; // 0 to 1 over 2 seconds
+            if (elapsedTime > 2) {
+                let bendFactor;
+                if (elapsedTime < 3.5) {
+                    // Initial forward bend when casting (2 to 3.5 seconds)
+                    bendFactor = Math.min(1, (elapsedTime - 2) / 1.5); // 0 to 1
+                    baseAngle = -45 * bendFactor * ((i + 1) / rodBoneCount); // BIGGER bend
+                } else if (elapsedTime < 6) {
+                    // Recoil and settle from 3.5 to 6
+                    let recoilProgress = (elapsedTime - 3.5) / 2.5; // 0 to 1
+                    // Blend from maximum bend (-45) to final bend angle (-15)
+                    baseAngle = (-45 + ((-45 - finalBendAngle) * recoilProgress)) * ((i + 1) / rodBoneCount);
                 } else {
-                    bendFactor = 1 - ((elapsedTime - 4) / 2); // 1 to 0 over 2 seconds
+                    // After 6 seconds, maintain the final bend angle
+                    baseAngle = finalBendAngle * ((i + 1) / rodBoneCount);
                 }
-
-                // Each segment bends more than the previous
-                baseAngle = -25 * bendFactor * ((i + 1) / rodBoneCount);
             }
 
-            // Add gentle oscillation
-            let oscillation = Math.sin(elapsedTime * 2 + i * 0.3) * 5;
+            // Add gentle oscillation - reduce amplitude over time for natural damping
+            let oscillationAmplitude = 5;
+            if (elapsedTime > 3.5) {
+                // Gradually reduce oscillation amplitude after the cast
+                oscillationAmplitude = 5 * Math.max(0.2, Math.min(1, 3 / (elapsedTime - 3)));
+            }
 
+            let oscillation = Math.sin(elapsedTime * 2 + i * 0.3) * oscillationAmplitude * ((i + 1) / rodBoneCount);
+            if(elapsedTime>1){
+                bendFactor = Math.min(1, (elapsedTime - 2) / 1.5); // 0 to 1
+                baseAngle = -45 * bendFactor * ((i + 1) / rodBoneCount); // BIGGER bend
+            }
+           else{
+               baseAngle = 0;
+            }
             // Combine base angle with oscillation
-            let angle = baseAngle + oscillation * ((i + 1) / rodBoneCount);
+            let angle = baseAngle + oscillation;
 
             // Create transformation matrices
-            let rotation = rotateZ(angle);
+            let rotation = rotateZ(angle/2);
 
             // Position offset between bones
             let offset = translate(0.0, 1.0, 0.0);
@@ -973,7 +1091,23 @@ function main()
         gl.enableVertexAttribArray(wAttrib);
 
 // Set model matrix to position the entire rod
-        gl.uniformMatrix4fv(uModel, false, flatten(translate(0, 0, 0)));
+        gl.uniformMatrix4fv(uModel, false, flatten(mult(hand.getWorldTransform(), mult(translate(-2.3, -2.0, 0.0),rotateZ(45)))));
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, rodPoints.length);
+
+// Reset the bone usage for other objects
+        gl.uniform1i(gl.getUniformLocation(program, "useBones"), false);
+// Draw the skinned fishing rod
+        gl.bindBuffer(gl.ARRAY_BUFFER, rodPositionBuffer);
+        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vPosition);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, rodWeightBuffer);
+        gl.vertexAttribPointer(wAttrib, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(wAttrib);
+
+// Set model matrix to position the entire rod
+        gl.uniformMatrix4fv(uModel, false, flatten(mult(hand.getWorldTransform(), mult(translate(-2.3, -2.0, 0.0),rotateZ(45)))));
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, rodPoints.length);
 
@@ -1005,6 +1139,33 @@ function main()
 
 }
 
+
+
+// Improved function to update arm model transforms
+function updateArmIKToTarget(targetX, targetY) {
+    // Solve IK for the target position
+    inverseKinematics(targetX, targetY);
+    forwardKinematics();
+
+    // Update upper arm transform
+    // Start with the base position, then rotate around Z axis
+    upperArm.transform = mult(
+        translate(-3.0, 3.0, 0.0),
+        rotateZ(degrees(theta1))
+    );
+
+    // Update forearm transform
+    // This is a local transform relative to the upper arm
+    // The forearm should be attached at the end of the upper arm
+    console.log(theta2)
+    forearm.transform = mult(
+        translate(1.0, -1.0, 0.0),  // Move to end of upper arm
+        rotateZ(degrees(-theta2))   // Apply the elbow angle
+    );
+
+    // Update hand transform - position at end of forearm
+    hand.transform = translate(0.0, 1.0, 0.0);
+}
 
 function createFin(color) {
     pointsArray.length = 0;
