@@ -640,88 +640,88 @@ function main()
 
 // SEGMENT 0 (Bottom segment)
 // Bottom vertices (4 vertices - two at front, two at back)
-    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 0 - fully influenced by bone 0
-    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 1 - fully influenced by bone 0
-    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 6 - fully influenced by bone 0
-    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0)); // Vertex 7 - fully influenced by bone 0
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(1.0, 0.0, 0.0, 0.0, 0.0));
 
 // Top vertices (8 vertices - four at front, four at back)
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 2 - blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 4 - blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 5 - blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 3 - blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 8 - blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 10 - blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 11 - blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // Vertex 9 - blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0));
 
 // SEGMENT 1
 // Bottom vertices (4 vertices)
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
-    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); // blend between bone 0 and 1
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.7, 0.3, 0.0, 0.0, 0.0)); 
 
 // Top vertices (8 vertices)
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.3, 0.7, 0.0, 0.0, 0.0)); 
 
 // SEGMENT 2
 // Bottom vertices (4 vertices)
-    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
-    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); // blend between bone 1 and 2
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.7, 0.3, 0.0, 0.0)); 
 
 // Top vertices (8 vertices)
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
-    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); // blend between bone 2 and 3
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.3, 0.7, 0.0, 0.0)); 
 
 // SEGMENT 3
 // Bottom vertices (4 vertices)
-    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); // Very little influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.9, 0.1, 0.0)); 
 
 // Top vertices (8 vertices)
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
-    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); // Much more influence from bone 3
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.1, 0.9, 0.0)); 
 
 // SEGMENT 4 (Top segment)
 // Bottom vertices (4 vertices)
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); // Much more influence from bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.2, 0.8)); 
 
 // Top vertices (8 vertices)
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
-    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); // fully influenced by bone 4
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
+    rodWeights.push(vec4(0.0, 0.0, 0.0, 0.0, 1.0)); 
 
 // Buffers for deformable rod
     let rodPositionBuffer = gl.createBuffer();
@@ -755,7 +755,7 @@ function main()
     colorCube();
     multCube(scalem(0.3, 1.0, 0.3)); // skinny rectangle
     upperArm.setData(gl, pointsArray, colorsArray);
-    upperArm.transform = translate(-3.0, 3.0, 0.0); // somewhere left of fish
+    upperArm.transform = translate(-10.0, 3.0, 0.0); // somewhere left of fish
 
 // Create Forearm (attach to upper arm, rotated 90 degrees)
     colorCube();
@@ -822,7 +822,6 @@ function main()
 
     // Timeline definition
     let timeline = new Timeline(10)
-    // Add these timeline events to create realistic rod bending
 /// Improved timeline events for casting animation
     timeline.addTrigger(1, function() {
         // Wind up - dramatic arm bend with forearm rotated up
@@ -855,7 +854,7 @@ function main()
         // Subtle oscillation while holding rod
         TweenManager.addTween(new Tween(6.5, 0, 1, function(t) {
             let holdX = 1.3 + Math.sin(t * 6) * 0.03;  // match follow-through X position
-            let holdY = 0.7 + Math.sin(t * 4) * 0.02;  // match follow-through Y position
+            let holdY = 0.7 + (5*Math.sin(t * 4)) * 0.02;  // match follow-through Y position
             updateArmIKToTarget(holdX, holdY);
         }));
     });
@@ -1012,7 +1011,6 @@ function main()
 
 
 // Update the rod bone animation in the render function
-// Replace the existing rod bones section with this code:
 
 // Rod bone animation section
         let rodBones = [];
@@ -1059,7 +1057,7 @@ function main()
             let angle = baseAngle + oscillation;
 
             // Create transformation matrices
-            let rotation = rotateZ(angle/2);
+            let rotation = rotateZ(angle/1.3);
 
             // Position offset between bones
             let offset = translate(0.0, 1.0, 0.0);
@@ -1150,9 +1148,10 @@ function updateArmIKToTarget(targetX, targetY) {
     // Update upper arm transform
     // Start with the base position, then rotate around Z axis
     upperArm.transform = mult(
-        translate(-3.0, 3.0, 0.0),
+        translate(-10.0, 3.0, 0.0),  
         rotateZ(degrees(theta1))
     );
+
 
     // Update forearm transform
     // This is a local transform relative to the upper arm
