@@ -3,7 +3,7 @@ Authors: Ethan Chen & Jacob Lu
 
 This project is a short animation of a fisherman attempting to catch a fish. The fishermen casts the bait into the water. As a fish swims by and notices the bait, it comes closer, but then goes away, which makes the fishing attempt unsuccessful.
 
-The animation should run as soon as the page loads.
+To play the animation, open index.html in a browser window.
 
 Implementation requirements:
 - Splines: 
