@@ -976,7 +976,7 @@ function main()
     // Sinking
     timeline.addTrigger(4.207, function(){
         let startPos = vec3(1.5,0,0)
-        TweenManager.addTween(new MotionTween(1, vec3(0,-32,0), vec3(0,-16,0), 0.8, function(offset, vel){
+        TweenManager.addTween(new MotionTween(4, vec3(0,-32,0), vec3(0,-16,0), 0.8, function(offset, vel){
             bait.transform = translate(add(startPos, offset))
         }))
     })
