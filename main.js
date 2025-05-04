@@ -1,6 +1,5 @@
 /*
-    CS 4732 - Project 1
-    @author Ethan Chen
+    CS 4732 - Final Project
 */
 let rodBaseAngle = 0; // GLOBAL variable to track base rod bend
 
@@ -374,9 +373,9 @@ function degToRad(deg) {
   }
 
 function eulerToQuat(roll, pitch, yaw){
-    roll = degToRad(roll)
-    pitch = degToRad(pitch)
-    yaw = degToRad(yaw)
+    roll = roll
+    pitch = pitch
+    yaw = yaw
     const cr = Math.cos(roll * 0.5);
     const sr = Math.sin(roll * 0.5);
     const cp = Math.cos(pitch * 0.5);
@@ -825,7 +824,13 @@ function main()
     ]
     let fishSplineRot = []
     for (let i = 0; i < fishSplinePos.length; i++){
-        fishSplineRot.push(vec3())
+        // generate euler rotations for spline by taking angle of vector from previous pos to current pos 
+        let offset = normalize(subtract(fishSplinePos[i], fishSplinePos[(i+fishSplinePos.length-1)%fishSplinePos.length]))
+        fishSplineRot.push(eulerToQuat(
+            0,
+            Math.asin(offset[1]),
+            Math.atan2(offset[2], offset[0])
+        ))
     }
     let activeSpline = new Spline(10, fishSplinePos, fishSplineRot)
 
@@ -929,38 +934,60 @@ function main()
     //Move fish
     timeline.addTrigger(0, function(){
         TweenManager.addTween(new Tween(10, 0, 1, function(a){
+            // Find rotation of tangent through taking average slerp from sampling the angle of two tiny vectors on the spline
             let splinePos = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+0.03)/activeSpline.time)
             let splinePos2 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime)/activeSpline.time)
-
-            if (!equal(cross(vec3(splinePos2),vec3(splinePos)), vec3())){ // Handle edge case when cross vector becomes zero
-                lookAtTransform = inverse(lookAt(vec3(splinePos2), vec3(splinePos), vec3(0, 1, 0)))
-            }
-            fishBody.transform = mult(lookAtTransform, rotateY(-90))
+            let splinePos3 = findCatmullRomPoint(activeSpline.posPoints, (elapsedTime+0.06)/activeSpline.time)
+            let offset1 = normalize(subtract(splinePos3,splinePos))
+            let offset2 = normalize(subtract(splinePos,splinePos2))
+            
+            let splineRot1 = eulerToQuat(
+                Math.asin(offset1[1]),
+                -Math.atan2(offset1[0], offset1[2]),
+                0
+            )
+            let splineRot2 = eulerToQuat(
+                Math.asin(offset2[1]),
+                -Math.atan2(offset2[0], offset2[2]),
+                0
+            )
+            fishBody.transform = mult(translate(splinePos[0],splinePos[1],splinePos[2]), mult(quatToMatrix(slerp(splineRot1,splineRot2,0.5)), rotateY(-90)))
         }))
     })
+
     // Throw bait
-    timeline.addTrigger(0, function(){
-        bait.transform = translate(vec3(-5,4,0))
+    // Start position
+    timeline.addTrigger(0, function(){ 
+        bait.transform = translate(vec3(-5,6,0))
     })
+    // Windup
     timeline.addTrigger(1, function(){
-        let startPos = vec3(-5,4,0)
-        TweenManager.addTween(new MotionTween(2.207, vec3(3,16,0), vec3(0,-16,0), 1, function(offset, vel){
+        TweenManager.addTween(new Tween(1, 0, 1, function(a){
+            bait.transform = translate(vec3(-5 - a*a*a *3,a*a*4+6,0))
+        }))
+    })
+    // Cast
+    timeline.addTrigger(2.1, function(){
+        let startPos = vec3(-8,7,0)
+        TweenManager.addTween(new MotionTween(2.207, vec3(4.3,16,0), vec3(0,-17.5,0), 1, function(offset, vel){
             bait.transform = translate(add(startPos, offset))
         }))
     })
-    timeline.addTrigger(3.207, function(){
+    // Sinking
+    timeline.addTrigger(4.207, function(){
         let startPos = vec3(1.5,0,0)
-        TweenManager.addTween(new MotionTween(7, vec3(0,-32,0), vec3(0,-16,0), 0.8, function(offset, vel){
+        TweenManager.addTween(new MotionTween(1, vec3(0,-32,0), vec3(0,-16,0), 0.8, function(offset, vel){
             bait.transform = translate(add(startPos, offset))
         }))
     })
 
-    // Camera pan
+    // Camera starting position
     timeline.addTrigger(0, function(){
         elapsedTime=0
         cameraPos = vec3(5,5,5)
         cameraTarget = vec3(0,5,0)
     })
+    // Camera pan
     timeline.addTrigger(2, function(){
         TweenManager.addTween(new Tween(4, 5, -2, function(a){
             cameraPos = vec3(5,a,5)
@@ -1238,7 +1265,6 @@ function updateArmIKToTarget(targetX, targetY) {
     // Update forearm transform
     // This is a local transform relative to the upper arm
     // The forearm should be attached at the end of the upper arm
-    console.log(theta2)
     forearm.transform = mult(
         translate(1.0, -1.0, 0.0),  // Move to end of upper arm
         rotateZ(degrees(-theta2))   // Apply the elbow angle
