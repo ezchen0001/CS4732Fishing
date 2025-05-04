@@ -755,7 +755,7 @@ function main()
     colorCube();
     multCube(scalem(0.3, 1.0, 0.3)); // skinny rectangle
     upperArm.setData(gl, pointsArray, colorsArray);
-    upperArm.transform = translate(-10.0, 3.0, 0.0); // somewhere left of fish
+    upperArm.transform = translate(-10.0, 8.0, 0.0); // somewhere left of fish
 
 // Create Forearm (attach to upper arm, rotated 90 degrees)
     colorCube();
@@ -780,7 +780,22 @@ function main()
     bait.setData(gl, pointsArray, colorsArray);
 
 
+    let fishingLine = new Model(gl);
+    singleColorCube(6); // 6 = white
+    multCube(scalem(0.02, 1.0, 0.02));  // Very thin and tall
+    fishingLine.setData(gl, pointsArray, colorsArray);
 
+    let oceanBackground = new Model(gl);
+    singleColorCube(4); // 4 = blue from vertexColors
+
+// Apply rotation here (change axis and angle as needed)
+    let rotation = rotateY(45); // You can also use rotateY(angle), rotateZ(angle)
+
+// Combine transformations: rotation * scale * translate
+    let oceanTransform = mult(translate(-40, -50, -50), mult(rotation, scalem(100, 50, 0.1)));
+
+    multCube(oceanTransform);
+    oceanBackground.setData(gl, pointsArray, colorsArray);
 
     // Define function for drawing a model
     function drawModel(model, primitive) {
@@ -804,9 +819,9 @@ function main()
         vec3(-5,-8,-2),
         vec3(-2,-9,-4),
         vec3(-1,-8.5,-4),
-        vec3(0,-1,-5),
-        vec3(0,0,-4),
-        vec3(-10,0,-5),
+        vec3(0,-4,-5),
+        vec3(0,-4,-4),
+        vec3(-10,-4,-5),
     ]
     let fishSplineRot = []
     for (let i = 0; i < fishSplinePos.length; i++){
@@ -961,6 +976,7 @@ function main()
     let accumulatedTime = 0
     let lookAtTransform = mat4()
     function render(currTime){
+
         let modelMatrixLoc = gl.getUniformLocation(program,'modelMatrix')
         modelMatrix = rotateX(180)
         gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix))
@@ -978,6 +994,7 @@ function main()
         gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+        drawModel(oceanBackground, gl.TRIANGLES);
 
 
 
@@ -1076,7 +1093,6 @@ function main()
             gl.uniformMatrix4fv(gl.getUniformLocation(program, `boneMatrix${i}`), false, flatten(rodBones[i]));
         }
 
-// Make sure to add this uniform to enable bone skinning when drawing the rod
         gl.uniform1i(gl.getUniformLocation(program, "useBones"), true);
 
 // Draw the skinned fishing rod
@@ -1121,7 +1137,73 @@ function main()
 
 
 
+
+
+
         gl.uniform1i(gl.getUniformLocation(program, "useBones"), false);
+
+
+
+// Replace the fishing line code in the render function with this improved version
+
+// Get rod tip position based on the last bone transformation
+// The last bone is at index rodBoneCount-1
+        let rodTipBoneMatrix = rodBones[rodBoneCount-1];
+// Apply the model matrix of the rod to get world coordinates
+        let rodModelMatrix = mult(hand.getWorldTransform(), mult(translate(-2.3, -2.0, 0.0), rotateZ(45)));
+// Combine the matrices to get the world position of the rod tip
+        let rodTipWorldMatrix = mult(rodModelMatrix, rodTipBoneMatrix);
+// Get position from the last bone matrix and add an offset for the tip of the rod
+// The y-offset (0.1) represents the length of the tip segment from the last bone
+        let start = vec3(
+            rodTipWorldMatrix[0][3]-.1,
+            rodTipWorldMatrix[1][3]-.1,  // Add offset for tip of rod
+            rodTipWorldMatrix[2][3]-.1
+        );
+
+// Bait position in world space
+        let end = vec3(
+            bait.transform[0][3],
+            bait.transform[1][3],
+            bait.transform[2][3]
+        );
+
+// Vector from start to end
+        let dir = subtract(end, start);
+        let length = magnitude(dir);
+
+// Midpoint between start and end
+        let mid = mix(start, end, 0.5);
+
+// Normalize direction
+        let dirNorm = normalize(dir);
+
+// Calculate rotation to align fishing line with direction
+        let up = vec3(0, 1, 0); // Default orientation
+        let axis;
+        let angle;
+
+// Handle the case when direction is parallel to up vector
+        if (Math.abs(dot(up, dirNorm)) > 0.999) {
+            // If nearly parallel, use a fixed axis (x-axis)
+            axis = vec3(1, 0, 0);
+            angle = dirNorm[1] > 0 ? 0 : 180; // 0 or 180 degrees
+        } else {
+            // Normal case
+            axis = cross(up, dirNorm);
+            angle = Math.acos(dot(up, dirNorm)) * 180 / Math.PI;
+        }
+
+// Build final transform
+        let lineTransform = mult(
+            translate(mid[0], mid[1], mid[2]),
+            mult(rotate(angle, axis),
+                scalem(0.01, length / 2, 0.01))
+        );
+
+// Apply transform to fishing line and draw it
+        fishingLine.transform = lineTransform;
+        drawModel(fishingLine, gl.LINES);
 
         drawModel(bait, gl.TRIANGLES)
 
@@ -1148,7 +1230,7 @@ function updateArmIKToTarget(targetX, targetY) {
     // Update upper arm transform
     // Start with the base position, then rotate around Z axis
     upperArm.transform = mult(
-        translate(-10.0, 3.0, 0.0),  
+        translate(-10.0, 8.0, 0.0),
         rotateZ(degrees(theta1))
     );
 
