@@ -25,18 +25,14 @@
         void main() {
             fColor = vColor;
 
-            if (useBones) {
-                // Apply bone transformations for the fishing rod
-                mat4 skinMatrix =
-                    weights.x * boneMatrix0 +
-                    weights.y * boneMatrix1 +
-                    weights.z * boneMatrix2 +
-                    weights.w * boneMatrix3 +
-                    (1.0 - weights.x - weights.y - weights.z - weights.w) * boneMatrix4;
+            if(useBones) {
+                //apply bone transformations for the fishing rod
+                mat4 skinMatrix =weights.x*boneMatrix0 + weights.y*boneMatrix1 + weights.z*boneMatrix2 + weights.w*boneMatrix3 +
+                    (1.0-weights.x - weights.y - weights.z - weights.w)*boneMatrix4;
 
                 gl_Position = projMatrix * cameraMatrix * modelMatrix * skinMatrix * vPosition;
             } else {
-                // Standard transformation for all other objects
+                //standard rendering for all other objects
                 gl_Position = projMatrix * cameraMatrix * modelMatrix * vPosition;
             }
         }
